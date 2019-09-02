@@ -1,8 +1,7 @@
 const express = require('express')
-const router = require('./router')
-const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
-const auth = require('./middleware/auth')
+const authRoutes = require('./router/auth');
+const userRoutes = require('./router/user');
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -18,12 +17,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/users', {
 //set up middleware
 app.use(express.json());
 
-//inintialize passport
-// app.use(passport.initialize())
-// app.use(passport.session())
-
 //set up routes
-app.use(router)
+app.use(authRoutes);
+app.use(userRoutes);
 
 //listen on available port
 app.listen( PORT, () => {
