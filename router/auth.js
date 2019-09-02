@@ -9,6 +9,12 @@ const authRefreshToken = require('../middleware/authRefreshToken')
 
 //Sign up
 router.post('/auth/signup', async (req,res)=>{
+    if(req.body.name == undefined || req.body.email == undefined || req.body.password == undefined)
+    {
+      console.error(new Error('Incomplete credentials.'))
+      res.status(401).send('Please provides complete credentials.')
+    }
+
     const user = new User(req.body);
     try{
         await user.save(); //saving includes hashing the password
@@ -25,7 +31,7 @@ router.post('/auth/signup', async (req,res)=>{
     
           var client = nodemailer.createTransport(sgTransport(options));
     
-          var email = {
+          var clientEmail = {
           from: 'Test Sign Up, test@localhost.com',
           to: user.email,
           subject: 'Hello',
@@ -36,7 +42,7 @@ router.post('/auth/signup', async (req,res)=>{
           };
     
         //Email confirmation
-        client.sendMail(email, function(err, info){
+        client.sendMail(clientEmail, function(err, info){
             if (err ){
             console.log(err);
             }

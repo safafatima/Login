@@ -4,6 +4,10 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
 const userSchema = new mongoose.Schema({
+    name:{
+        type: String,
+        trim: true
+    },
     email:{
         type: String,
         required: true,
@@ -12,7 +16,8 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         validate(value){
             if(!(validator.isEmail(value))){
-                throw new Error("Invalid email")
+                console.error(new Error('Invalid email.'))
+                throw new Error("Invalid email!")
             }
         }
     },
@@ -20,12 +25,24 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         validate(value){
+            let validPassword = true
+
             if(value.length<6){
-                throw new Error('Password should be of 6 characters or more.')
-            }
-            if(value.includes('password'))
+                validPassword = false
+            }else if(value.includes('password'))
             {
-                throw new Error('Password can not contain the word password.')
+                validPassword = false
+                
+            }else{
+                var pattern = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+                validPassword = pattern.test(value)
+            }
+            
+            if(validPassword){
+                console.log("Valid password");
+            }else{
+                console.error(new Error('Invalid Password.'))
+                throw new Error('Password does not meet the minimum requirements.')
             }
         },
         trim: true 
@@ -60,14 +77,13 @@ userSchema.methods.toJSON = function (){
 }
 
 // Save user
-// Hash plain-text password before saving
 userSchema.pre('save', async function (next){
     const user = this;
 
     console.log('In the save function now....')
     if(user.isModified('Password')){
         console.log('Hashing Password')
-        user.password = await bcrypt.hash(user.password, 8)
+        user.password = await bcrypt.hash(user.password, 8)             // Hash plain-text password before saving
     }
     next();
 })
@@ -75,14 +91,15 @@ userSchema.pre('save', async function (next){
 //Search user by Email
 userSchema.statics.findByCredentials = async (email, password) =>{
     const user = await User.findOne({email})
-    if(!user)
-        throw new Error('Unable to login, user not found.')
+    if(!user){
+        console.error(new Error('User not found'))
+        throw new Error('Unable to login, user not found.')}
     
     const isMatch = await bcrypt.compare(password, user.password)
     if(!isMatch) //verify password
     {
-        console.log('Passwords dont match')
-        throw new Error('Incorrect Password!')}
+        console.error(new Error('Passwords dont match.'))
+        throw new Error('Invalid credentials!')}
    
     return user;
 }
